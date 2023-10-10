@@ -1,2 +1,5 @@
+numpy
 robosuite
+robomimic
 termcolor
+torch
