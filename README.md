@@ -1,5 +1,9 @@
 # L4DC Project
 
+## Dependencies
+- robosuite v1.4.1
+- robomimic v0.3
+
 ## Setup
 Create virtual environment and install dependencies:
 ```
@@ -7,18 +11,26 @@ Create virtual environment and install dependencies:
     source env/bin/activate
     pip3 install -r requirements.txt
 ```
-Setup private macro file (recommended by robosuite):
+Install robomimic v0.3 and robosuite v1.4.1 from source:
 ```
-    python3 ${PATH_TO_DIR}/L4DC_Project/env/lib/python3.9/site-packages/robosuite/macros_private.py
+    git clone https://github.com/ARISE-Initiative/robomimic.git
+    cd robomimic
+    git checkout v0.3
+    pip3 install -e .
+    cd ${PATH_TO_DIR}/L4DC_Project
+
+    git clone https://github.com/ARISE-Initiative/robosuite.git
+    cd robosuite
+    git checkout v1.4.1
+    pip3 install -e .
+    cd ${PATH_TO_DIR}/L4DC_Project
 ```
-Change python3.9 to python version
+```
+Setup private macro file for robosuite and robomimic.
+
+Change python3.8 to python version
 
 Test setup:
 ```
     python3 tests/test_setup.py
-```
-
-Test simulation:
-```
-    python3 tests/test_simulation.py
 ```
