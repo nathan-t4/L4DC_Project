@@ -25,7 +25,7 @@ Install robomimic v0.3 and robosuite v1.4.1 from source:
     pip3 install -e .
     cd ${PATH_TO_DIR}/L4DC_Project
 ```
-```
+
 Setup private macro file for robosuite and robomimic.
 
 Change python3.8 to python version
