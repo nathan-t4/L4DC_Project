@@ -3,3 +3,7 @@ env
 
 robosuite/
 robomimic/
+hhbc/
+exps/
+
+scripts/train_hhbc.py

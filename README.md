@@ -1,8 +1,9 @@
 # L4DC Project
 
 ## Dependencies
-- robosuite v1.4.1
-- robomimic v0.3
+- robosuite v1.4.1 (source)
+- robomimic v0.3 (source)
+- see requirements.txt
 
 ## Setup
 Create virtual environment and install dependencies:
@@ -28,9 +29,12 @@ Install robomimic v0.3 and robosuite v1.4.1 from source:
 
 Setup private macro file for robosuite and robomimic.
 
-Change python3.8 to python version
-
 Test setup:
 ```
     python3 tests/test_setup.py
+```
+
+## Run
+```
+python scripts/train.py --env=ROBOSUITE_ENV_NAME
 ```
