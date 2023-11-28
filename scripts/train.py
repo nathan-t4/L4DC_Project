@@ -1,4 +1,5 @@
 import os
+import torch
 
 import robosuite as suite
 from robosuite import load_controller_config
@@ -13,6 +14,8 @@ from argparse import ArgumentParser
 from utils.wrapper import wrap_env
 
 def train(args):
+    gpu = torch.device('cuda', 0)
+
     assert args.env in suite.ALL_ENVIRONMENTS, "Invalid env flag!"
     assert args.controller in suite.ALL_CONTROLLERS, "Invalid controller flag!"
     assert args.robot in suite.ALL_ROBOTS, "Invalid robot flag!"
@@ -20,12 +23,13 @@ def train(args):
     if args.continue_training:
         assert args.env in args.dir, "Directory and environment mismatch"
         assert args.robot in args.dir, "Directory and robot mismatch"
+        MODEL_DIR = os.path.dirname(args.dir)
         MODEL_PATH = args.dir
     else:
-        MODEL_PATH = f'./exps/{args.env}-{args.robot}/{args.policy}/{strftime("%Y%m%d-%H%M%S")}/'
+        MODEL_DIR = f'./exps/{args.env}-{args.robot}/{args.controller}/{args.policy}/{strftime("%Y%m%d-%H%M%S")}/'
     
-    TB_PATH = os.path.join(MODEL_PATH, 'tb/')
-    LOG_PATH = os.path.join(MODEL_PATH, 'log/')
+    TB_PATH = os.path.join(MODEL_DIR, 'tb/')
+    LOG_PATH = os.path.join(MODEL_DIR, 'log/')
     # Load controller config
     controller_config = load_controller_config(default_controller=args.controller)
     # Initialize robosuite training + evaluation environment
@@ -69,6 +73,7 @@ def train(args):
             model = SAC.load(path=MODEL_PATH,
                              env=env,
                              tensorboard_log=TB_PATH,
+                             device=gpu,
                     )
         else:
             model = SAC(policy='MlpPolicy',
@@ -76,12 +81,14 @@ def train(args):
                         gamma=0.97,
                         tensorboard_log=TB_PATH,
                         verbose=1,
+                        device=gpu,
                     )
     elif args.policy == 'PPO':
         if args.continue_training:
             model = PPO.load(path=MODEL_PATH,
                              env=env,
                              tensorboard_log=TB_PATH,
+                             device=gpu,
                     )
         else:
             model = PPO(policy='MlpPolicy',
@@ -89,6 +96,7 @@ def train(args):
                         gamma=0.97,
                         tensorboard_log=TB_PATH,
                         verbose=1,
+                        device=gpu,
                     )
     else:
         raise RuntimeError('Invalid policy flag!')
@@ -106,7 +114,7 @@ def train(args):
     
     # Periodically save model callback
     auto_save_callback = CheckpointCallback(save_freq=5000,
-                                            save_path=MODEL_PATH,
+                                            save_path=MODEL_DIR,
                                             name_prefix=f'{args.env}',
                                             save_replay_buffer=False,
                                             verbose=2)
@@ -117,12 +125,12 @@ def train(args):
                 callback=callbacks,
                 reset_num_timesteps=False)
     
-    model.save(os.path.join(MODEL_PATH, f'{args.env}_final.zip'))
+    model.save(os.path.join(MODEL_DIR, f'{args.env}_final.zip'))
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--env', type=str, required=True, default='PickPlaceSingle')
-    parser.add_argument('--controller', type=str, default='OSC_POSE')
+    parser.add_argument('--controller', type=str, default='OSC_POSITION')
     parser.add_argument('--robot', type=str, default='Panda')
     parser.add_argument('--policy', type=str, default='SAC')
     parser.add_argument('--dir', type=str, default=None)

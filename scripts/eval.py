@@ -7,27 +7,31 @@ from robosuite.wrappers import GymWrapper
 
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import VecNormalize
 
 from utils.wrapper import wrap_env
 
 def rollout(env, model, eps, render=True, deterministic=True):
     ep = 0
+    success = 0
     obs, info = env.reset()
     while ep < eps:
         action, _states = model.predict(obs, deterministic=deterministic)
         obs, reward, terminated, truncated, info = env.step(action)
 
         done = terminated or truncated
-        # print(reward)
+
         if render:
             env.unwrapped.render()
 
         if done:
-            obs, info = env.reset()
             ep += 1
-    
+            if env.unwrapped._check_success():
+                success += 1
+            obs, info = env.reset()
+            
     env.close()
+
+    print(f'Success rate: {success / eps * 100}%')
 
 def eval(args):
     assert args.env in suite.ALL_ENVIRONMENTS, "Invalid env flag!"
@@ -36,9 +40,8 @@ def eval(args):
 
     MODEL_PATH = args.dir
     controller_config = load_controller_config(default_controller=args.controller)
-
-    env = Monitor(
-        GymWrapper(
+    # Create evaluation environment (same params as training env)
+    env = GymWrapper(
             suite.make(
                 env_name=args.env,
                 robots=args.robot,
@@ -52,8 +55,15 @@ def eval(args):
                 horizon=100,
                 reward_shaping=True,
             )   
-        )  
-    )
+    )  
+    # Wrap environment
+    env = wrap_env(env)
+    # Check flags are consistent
+    assert args.env in MODEL_PATH, "env / dir flags mismatch!"
+    assert args.robot in MODEL_PATH, "robot / dir flags mismatch"
+    assert args.controller in MODEL_PATH, "controller / dir flags mismatch!"
+    assert args.policy in MODEL_PATH, "policy / dir flags mismatch!"
+
     if args.policy == 'SAC':
         model = SAC.load(MODEL_PATH)
     elif args.policy == 'PPO':
@@ -68,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--env', type=str, required=True)
     parser.add_argument('--dir', type=str, required=True)
     parser.add_argument('--eval_eps', type=int, default=10)
-    parser.add_argument('--controller', type=str, default='OSC_POSE')
+    parser.add_argument('--controller', type=str, default='OSC_POSITION')
     parser.add_argument('--robot', type=str, default='Panda')
     parser.add_argument('--policy', type=str, default='SAC')
     args = parser.parse_args()
