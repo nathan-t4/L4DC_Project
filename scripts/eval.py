@@ -5,7 +5,7 @@ import robosuite as suite
 from robosuite.controllers import load_controller_config
 from robosuite.wrappers import GymWrapper
 
-from stable_baselines3 import SAC
+from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 
@@ -19,7 +19,7 @@ def rollout(env, model, eps, render=True, deterministic=True):
         obs, reward, terminated, truncated, info = env.step(action)
 
         done = terminated or truncated
-        print(reward)
+        # print(reward)
         if render:
             env.unwrapped.render()
 
@@ -54,8 +54,12 @@ def eval(args):
             )   
         )  
     )
-    
-    model = SAC.load(MODEL_PATH)
+    if args.policy == 'SAC':
+        model = SAC.load(MODEL_PATH)
+    elif args.policy == 'PPO':
+        model = PPO.load(MODEL_PATH)
+    else:
+        raise RuntimeError("Invalid policy flag!")
 
     rollout(env=env, model=model, eps=args.eval_eps)
 
@@ -66,6 +70,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval_eps', type=int, default=10)
     parser.add_argument('--controller', type=str, default='OSC_POSE')
     parser.add_argument('--robot', type=str, default='Panda')
+    parser.add_argument('--policy', type=str, default='SAC')
     args = parser.parse_args()
 
     eval(args)

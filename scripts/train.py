@@ -17,7 +17,13 @@ def train(args):
     assert args.controller in suite.ALL_CONTROLLERS, "Invalid controller flag!"
     assert args.robot in suite.ALL_ROBOTS, "Invalid robot flag!"
 
-    MODEL_PATH = f'./exps/{args.env}-{args.robot}/{strftime("%Y%m%d-%H%M%S")}/'
+    if args.continue_training:
+        assert args.env in args.dir, "Directory and environment mismatch"
+        assert args.robot in args.dir, "Directory and robot mismatch"
+        MODEL_PATH = args.dir
+    else:
+        MODEL_PATH = f'./exps/{args.env}-{args.robot}/{args.policy}/{strftime("%Y%m%d-%H%M%S")}/'
+    
     TB_PATH = os.path.join(MODEL_PATH, 'tb/')
     LOG_PATH = os.path.join(MODEL_PATH, 'log/')
     # Load controller config
@@ -59,19 +65,31 @@ def train(args):
 
     # Initialize sb3 RL policy
     if args.policy == 'SAC':
-        model = SAC(policy='MlpPolicy',
-                    env=env,
-                    gamma=0.97,
-                    tensorboard_log=TB_PATH,
-                    verbose=1,
-                )
+        if args.continue_training:
+            model = SAC.load(path=MODEL_PATH,
+                             env=env,
+                             tensorboard_log=TB_PATH,
+                    )
+        else:
+            model = SAC(policy='MlpPolicy',
+                        env=env,
+                        gamma=0.97,
+                        tensorboard_log=TB_PATH,
+                        verbose=1,
+                    )
     elif args.policy == 'PPO':
-        model = PPO(policy='MlpPolicy',
-                    env=env,
-                    gamma=0.97,
-                    tensorboard_log=TB_PATH,
-                    verbose=1,
-                )
+        if args.continue_training:
+            model = PPO.load(path=MODEL_PATH,
+                             env=env,
+                             tensorboard_log=TB_PATH,
+                    )
+        else:
+            model = PPO(policy='MlpPolicy',
+                        env=env,
+                        gamma=0.97,
+                        tensorboard_log=TB_PATH,
+                        verbose=1,
+                    )
     else:
         raise RuntimeError('Invalid policy flag!')
     
@@ -106,8 +124,9 @@ if __name__ == '__main__':
     parser.add_argument('--env', type=str, required=True, default='PickPlaceSingle')
     parser.add_argument('--controller', type=str, default='OSC_POSE')
     parser.add_argument('--robot', type=str, default='Panda')
-    # parser.add_argument('--dir', type=str, default=None)
     parser.add_argument('--policy', type=str, default='SAC')
+    parser.add_argument('--dir', type=str, default=None)
+    parser.add_argument('--continue_training', action='store_true')
     args = parser.parse_args()
 
     train(args)
