@@ -1,4 +1,7 @@
-l4dc
+__pycache__/
+*.py[cod]
+*.pyc
+
 env
 
 robosuite/

@@ -1,22 +1,23 @@
 import os
-from copy import deepcopy
 
 import robosuite as suite
 from robosuite import load_controller_config
 from robosuite.wrappers import GymWrapper
 
-from stable_baselines3 import SAC
-from stable_baselines3.common.monitor import Monitor
+from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 
 from time import strftime
 from argparse import ArgumentParser
 
-def train(args):
-    assert args.env in suite.ALL_ENVIRONMENTS
-    assert args.controller in suite.ALL_CONTROLLERS, "Invalid controller flag!"
+from utils.wrapper import wrap_env
 
-    MODEL_PATH = f'./exps/{args.env}/{strftime("%Y%m%d-%H%M%S")}/'
+def train(args):
+    assert args.env in suite.ALL_ENVIRONMENTS, "Invalid env flag!"
+    assert args.controller in suite.ALL_CONTROLLERS, "Invalid controller flag!"
+    assert args.robot in suite.ALL_ROBOTS, "Invalid robot flag!"
+
+    MODEL_PATH = f'./exps/{args.env}-{args.robot}/{strftime("%Y%m%d-%H%M%S")}/'
     TB_PATH = os.path.join(MODEL_PATH, 'tb/')
     LOG_PATH = os.path.join(MODEL_PATH, 'log/')
     # Load controller config
@@ -27,36 +28,52 @@ def train(args):
                 env_name=args.env,
                 robots=args.robot,
                 controller_configs=controller_config,
-                has_renderer=True,
+                has_renderer=False,
                 has_offscreen_renderer=False,
                 ignore_done=False,
                 use_camera_obs=False,
+                use_object_obs=True,
                 control_freq=20,
                 horizon=100,
+                reward_shaping=True,
             )
     )
-    eval_env = Monitor(GymWrapper(
+    eval_env = GymWrapper(
             suite.make(
                 env_name=args.env,
                 robots=args.robot,
                 controller_configs=controller_config,
-                has_renderer=True,
+                has_renderer=False,
                 has_offscreen_renderer=False,
                 ignore_done=False,
                 use_camera_obs=False,
+                use_object_obs=True,
                 control_freq=20,
                 horizon=100,
+                reward_shaping=True,
             )
         )
-    )
+    # Wrap environment
+    env = wrap_env(env)
+    eval_env = wrap_env(env)
 
-    # Initialize sb3 RL policy (SAC for now)
-    model = SAC(policy='MlpPolicy',
-                env=env,
-                gamma=0.97,
-                tensorboard_log=TB_PATH,
-                verbose=1,
-            )
+    # Initialize sb3 RL policy
+    if args.policy == 'SAC':
+        model = SAC(policy='MlpPolicy',
+                    env=env,
+                    gamma=0.97,
+                    tensorboard_log=TB_PATH,
+                    verbose=1,
+                )
+    elif args.policy == 'PPO':
+        model = PPO(policy='MlpPolicy',
+                    env=env,
+                    gamma=0.97,
+                    tensorboard_log=TB_PATH,
+                    verbose=1,
+                )
+    else:
+        raise RuntimeError('Invalid policy flag!')
     
     # Callbacks
     # Evaluation callback
@@ -90,7 +107,7 @@ if __name__ == '__main__':
     parser.add_argument('--controller', type=str, default='OSC_POSE')
     parser.add_argument('--robot', type=str, default='Panda')
     # parser.add_argument('--dir', type=str, default=None)
-    # parser.add_argument('--policy', type=str, default='SAC')
+    parser.add_argument('--policy', type=str, default='SAC')
     args = parser.parse_args()
 
     train(args)
