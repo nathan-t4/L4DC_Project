@@ -1,8 +1,10 @@
 # L4DC Project
+Train online RL policies (e.g. PPO, SAC) in robosuite with stable_baselines3
 
 ## Dependencies
 - robosuite v1.4.1 (source)
 - robomimic v0.3 (source)
+- stable_baselines3 >= 2.2.1
 - see requirements.txt
 
 ## Setup
@@ -49,9 +51,9 @@ python scripts/train.py
 - `--continue_training [store_true]`: whether to load previously trained model and continue training
 - `--dir [str]`: directory of previously trained model (only used when `--continue_training`)
 
-Example:
+Example: train SAC policy in robosuite Lift environment with IIWA robot
 ```
-python scripts/train.py --env=Lift --robot=IIWA --policy=SAC
+python scripts/train.py --env=Lift --robot=IIWA --policy=SAC --controller=OSC_POSITION
 ```
 
 ## Evaluate
@@ -64,9 +66,9 @@ python scripts/eval.py
 - `--controller [str]`: the low-level joint controller for the robot (currently only supports `robosuite.ALL_CONTROLLERS`)
 - `--policy [str]`: the RL policy used (SAC or PPO)
 - `--dir [str]`: path to saved model (zip)
-- `--eval_eps [int]`: number of evaluation episodes
+- `--eval_eps [Optional[int]]`: number of evaluation episodes
 
-Example:
+Example: evaluate SAC policy trained for robosuite Lift environment with IIWA robot
 ```
-python scripts/eval.py --env=Lift --robot=IIWA --dir=PATH_TO_MODEL --policy=SAC
+python scripts/eval.py --env=Lift --robot=IIWA --policy=SAC --controller=OSC_POSITION --dir=PATH_TO_MODEL 
 ```

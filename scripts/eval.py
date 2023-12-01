@@ -15,7 +15,7 @@ def rollout(env, model, eps, render=True, deterministic=True):
     success = 0
     obs, info = env.reset()
     while ep < eps:
-        action, _states = model.predict(obs, deterministic=deterministic)
+        action, _states = model.predict(obs, deterministic=True)
         obs, reward, terminated, truncated, info = env.step(action)
 
         done = terminated or truncated
@@ -40,6 +40,20 @@ def eval(args):
 
     MODEL_PATH = args.dir
     controller_config = load_controller_config(default_controller=args.controller)
+
+    # Check flags are consistent
+    assert args.env in MODEL_PATH, "env / dir flags mismatch!"
+    assert args.robot in MODEL_PATH, "robot / dir flags mismatch"
+    assert args.controller in MODEL_PATH, "controller / dir flags mismatch!"
+    assert args.policy in MODEL_PATH, "policy / dir flags mismatch!"
+
+    if args.policy == 'SAC':
+        model = SAC.load(MODEL_PATH)
+    elif args.policy == 'PPO':
+        model = PPO.load(MODEL_PATH)
+    else:
+        raise RuntimeError("Invalid policy flag!")
+
     # Create evaluation environment (same params as training env)
     env = GymWrapper(
             suite.make(
@@ -58,18 +72,6 @@ def eval(args):
     )  
     # Wrap environment
     env = wrap_env(env)
-    # Check flags are consistent
-    assert args.env in MODEL_PATH, "env / dir flags mismatch!"
-    assert args.robot in MODEL_PATH, "robot / dir flags mismatch"
-    assert args.controller in MODEL_PATH, "controller / dir flags mismatch!"
-    assert args.policy in MODEL_PATH, "policy / dir flags mismatch!"
-
-    if args.policy == 'SAC':
-        model = SAC.load(MODEL_PATH)
-    elif args.policy == 'PPO':
-        model = PPO.load(MODEL_PATH)
-    else:
-        raise RuntimeError("Invalid policy flag!")
 
     rollout(env=env, model=model, eps=args.eval_eps)
 

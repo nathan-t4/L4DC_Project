@@ -1,1 +1,1 @@
-python scripts/train.py --env=Lift
+python scripts/train.py --env=Lift --policy=SAC --robot=IIWA

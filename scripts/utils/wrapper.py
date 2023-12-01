@@ -1,7 +1,9 @@
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+from robosuite.wrappers import GymWrapper
 
 def wrap_env(env, saved_vn=None):
+    # wrapped_env = GymWrapper(env)
     wrapped_env = Monitor(env)
     # wrapped_env = DummyVecEnv([lambda : wrapped_env])
     # if saved_vn is None:

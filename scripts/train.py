@@ -14,7 +14,7 @@ from argparse import ArgumentParser
 from utils.wrapper import wrap_env
 
 def train(args):
-    gpu = torch.device('cuda', 0)
+    device = torch.device('cuda', 0)
 
     assert args.env in suite.ALL_ENVIRONMENTS, "Invalid env flag!"
     assert args.controller in suite.ALL_CONTROLLERS, "Invalid controller flag!"
@@ -26,7 +26,7 @@ def train(args):
         MODEL_DIR = os.path.dirname(args.dir)
         MODEL_PATH = args.dir
     else:
-        MODEL_DIR = f'./exps/{args.env}-{args.robot}/{args.controller}/{args.policy}/{strftime("%Y%m%d-%H%M%S")}/'
+        MODEL_DIR = f'./exps/{args.env}/{args.robot}/{args.policy}/{args.controller}/{strftime("%Y%m%d-%H%M%S")}/'
     
     TB_PATH = os.path.join(MODEL_DIR, 'tb/')
     LOG_PATH = os.path.join(MODEL_DIR, 'log/')
@@ -44,7 +44,7 @@ def train(args):
                 use_camera_obs=False,
                 use_object_obs=True,
                 control_freq=20,
-                horizon=100,
+                horizon=100, # change for pickplacecan?
                 reward_shaping=True,
             )
     )
@@ -59,7 +59,7 @@ def train(args):
                 use_camera_obs=False,
                 use_object_obs=True,
                 control_freq=20,
-                horizon=100,
+                horizon=100, # change for pickplacecan?
                 reward_shaping=True,
             )
         )
@@ -73,7 +73,7 @@ def train(args):
             model = SAC.load(path=MODEL_PATH,
                              env=env,
                              tensorboard_log=TB_PATH,
-                             device=gpu,
+                             device=device,
                     )
         else:
             model = SAC(policy='MlpPolicy',
@@ -81,14 +81,14 @@ def train(args):
                         gamma=0.97,
                         tensorboard_log=TB_PATH,
                         verbose=1,
-                        device=gpu,
+                        device=device,
                     )
     elif args.policy == 'PPO':
         if args.continue_training:
             model = PPO.load(path=MODEL_PATH,
                              env=env,
                              tensorboard_log=TB_PATH,
-                             device=gpu,
+                             device=device,
                     )
         else:
             model = PPO(policy='MlpPolicy',
@@ -96,7 +96,7 @@ def train(args):
                         gamma=0.97,
                         tensorboard_log=TB_PATH,
                         verbose=1,
-                        device=gpu,
+                        device=device,
                     )
     else:
         raise RuntimeError('Invalid policy flag!')
@@ -108,7 +108,7 @@ def train(args):
                                 n_eval_episodes=10,
                                 deterministic=True,
                                 log_path=LOG_PATH,
-                                best_model_save_path=LOG_PATH,
+                                best_model_save_path=MODEL_DIR,
                                 verbose=1,
                                 render=False)
     
